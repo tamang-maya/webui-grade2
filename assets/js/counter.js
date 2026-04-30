@@ -15,4 +15,5 @@ function reset() {
     counter = 0;
     document.getElementById("counter").textContent = counter;
 }
+setInterval(incrementCounter, 1000);
 
