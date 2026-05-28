@@ -33,9 +33,55 @@ function reserve() {
     }
    //recommend
     function pickRecommend() {
-        const recommendResult = document.getElementById('recommendResult');
-        const menuItems = ['カフェラテ', 'カプチーノ', 'エスプレッソ', 'アメリカーノ', 'モカ'];
-        const randomIndex = Math.floor(Math.random() * menuItems.length);
-        const recommendItem = menuItems[randomIndex];
-        recommendResult.textContent = `おすすめは「${recommendItem}」です！`;
-     }
+        const items =[
+            '本本日のコーヒ',
+            'カフェラテ',
+            'チーズケーキ',
+            'カプチーノ',
+            'エスプレッソ',
+            'アイスコーヒー'
+        ];
+        const i = Math.floor(Math.random() * items.length);
+        document.getElementById('recommendResult').textContent = `今日のおすすめは、${items[i]}です！`;
+    }
+
+        //テーマ変更（ボタンを押すたびに色を切り替える）
+        const themes = [
+            { name: 'coffee', main: '#78350F', accent: '#F59E0B', bg: '#FFFBEB' },
+            { name: 'forest', main: '#15803D', accent: '#F97316', bg: '#F0FDF4' },
+            { name: 'sunset', main: '#DB2777', accent: '#7C3AED', bg: '#FDF2F8' },
+            { name: 'ocean',  main: '#0369A1', accent: '#FBBF24', bg: '#F0F9FF' },
+         ];
+         let themeIndex = 0;
+         
+            function toggleTheme() {
+                console.log('テーマ変更ボタンが押されました');
+
+                //themeindex= 1% 4;
+                themeIndex = (themeIndex + 1) % themes.length;
+
+                // 現在のテーマを取得する
+                const theme = themes[themeIndex];
+
+                // CSS変数を更新して、テーマの色を切り替える
+                document.documentElement.style.setProperty('--main-color', theme.main);
+                document.documentElement.style.setProperty('--accent-color', theme.accent);
+                document.documentElement.style.setProperty('--bg-color', theme.bg);
+            }
+    function countVisit() {
+        
+        // localStorageから訪問回数を取得する。初めての場合は0にする
+
+        let count = localStorage.getItem('visitCount');// localStorageは文字列で保存されるため、数値に変換する必要がある/できるだけ大事なことに使わないようにすること//
+        if ( count === null ) { 
+        count = 0;
+        } else {
+        count = Number(count);
+        }
+        count = count + 1;
+        localStorage.setItem('visitCount', count);
+
+        document.getElementById('visitCount').textContent = count;
+    }
+    countVisit();
+             
