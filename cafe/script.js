@@ -34,7 +34,7 @@ function reserve() {
    //recommend
     function pickRecommend() {
         const items =[
-            '本本日のコーヒ',
+            '本日のコーヒ',
             'カフェラテ',
             'チーズケーキ',
             'カプチーノ',
