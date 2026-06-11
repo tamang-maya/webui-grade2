@@ -3,15 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>poke API</title>
+    <title>ポケモン風 APIバトル</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'VT323', "DotGothic16", monospace; background: #2c3e50; display: flex; flex-direction: column; align-items: center; min-height: 100vh; justify-content: center; margin: 0; }
+        #setup { background: #ecf0f1; padding: 30px; border: 6px solid #34495e; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #setup input { font-family: inherit; padding: 10px; border: 2px solid #bdc3c7; border-radius: 4px; font-size: 1.2rem; margin: 5px; }
+        #start-btn { font-family: inherit; padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1.2rem; transition: background 0.3s; }
+        #start-btn:hover { background: #c0392b; }
+
+        .battle-scene { 
+            width: 500px; height: 350px; background: linear-gradient(#87CEEB 60%, #90EE90 60%); 
+            border: 10px solid #333; position: relative; overflow: hidden; border-radius: 15px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        }
+        
+        /* Shadows for Pokemon to stand on */
+        .battle-scene::after { content: ''; position: absolute; bottom: 30px; left: 30px; width: 180px; height: 50px; background: rgba(0,0,0,0.1); border-radius: 50%; z-index: 0; }
+        .battle-scene::before { content: ''; position: absolute; top: 120px; right: 30px; width: 140px; height: 40px; background: rgba(0,0,0,0.1); border-radius: 50%; z-index: 0; }
+
+        #opponent-ui { position: absolute; top: 20px; left: 20px; width: 200px; background: rgba(255,255,255,0.9); padding: 10px; border: 3px solid #333; z-index: 1; }
+        #p2-img { position: absolute; top: 40px; right: 30px; width: 140px; image-rendering: pixelated; z-index: 1; }
+        
+        #player-ui { position: absolute; bottom: 40px; right: 20px; width: 220px; background: rgba(255,255,255,0.9); padding: 10px; border: 3px solid #333; z-index: 1; }
+        #p1-img { position: absolute; bottom: 40px; left: 30px; width: 180px; image-rendering: pixelated; z-index: 1; }
+
+        .hp-container { border: 3px solid #333; background: #fff; height: 15px; margin: 5px 0; overflow: hidden; }
+        .hp-bar { height: 100%; width: 100%; background: #eee; }
+        .hp-fill { height: 100%; width: 100%; transition: width 0.5s, background-color 0.5s; background: #4caf50; }
+        
+        #log {
+            width: 500px; height: 100px; border: 8px solid #333; border-top: none;
+            background: #fff; padding: 15px; box-sizing: border-box; font-size: 1.5rem; line-height: 1.2;
+            overflow-y: hidden; position: relative;
+        }
+        
+        .controls { 
+            width: 500px; display: grid; grid-template-columns: 1fr 1fr; 
+            border: 8px solid #333; border-top: none; background: #34495e; padding: 5px; box-sizing: border-box;
+        }
+        .controls button { 
+            padding: 15px; border: 2px solid #2c3e50; background: #ecf0f1; 
+            cursor: pointer; font-family: inherit; font-weight: bold; font-size: 1.3rem; margin: 2px;
+            transition: all 0.2s;
+        }
+        .controls button:hover:not(:disabled) { background: #bdc3c7; transform: translateY(-2px); }
+        .controls button:active:not(:disabled) { transform: translateY(0); }
+        .controls button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+        .attack-animation { animation: attack-pulse 0.4s ease-out; }
+        @keyframes attack-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        /* Blast Effect */
+        .blast-effect {
+            position: absolute;
+            width: 100px; /* エフェクトのサイズ */
+            height: 100px; /* エフェクトのサイズ */
+            border-radius: 50%;
+            /* 煙のようなグラデーション */
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.8) 0%, rgba(150, 150, 150, 0.6) 50%, rgba(0, 0, 0, 0) 100%);
+            opacity: 0;
+            transform: scale(0);
+            z-index: 2; /* ポケモン画像の上に表示 */
+            pointer-events: none; /* クリックを妨げない */
+        }
+        #p2-blast-effect { /* 相手ポケモンに合わせた位置 */
+            top: 60px; 
+            right: 50px;
+        }
+        #p1-blast-effect { /* 自分のポケモンに合わせた位置 */
+            bottom: 80px; 
+            left: 70px;
+        }
+        .blast-active {
+            animation: blast-animation 0.5s ease-out forwards;
+        }
+        @keyframes blast-animation {
+            0% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1.5); }
+            100% { opacity: 0; transform: scale(0); }
+        }
+        .type-list { display: flex; gap: 8px; margin-top: 5px; }
+        #opponent-ui .type-list { justify-content: flex-start; }
+        #player-ui .type-list { justify-content: flex-end; }
+        .type-badge { 
+            padding: 4px 12px; 
+            border-radius: 6px; 
+            color: white; 
+            font-size: 1.6rem; /* サイズを大きめに設定 */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            border: 2px solid rgba(0,0,0,0.3);
+            font-weight: bold;
+        }
+        .hidden { display: none; }
+    </style>
 </head>
 <body>
-    <section>
-        <input id="name" placeholder="ポケモン名を入力">
-        <button id="section1-btn">検索</button>
-        <p id="section1-result"></p>
-    </section>
+    <div id="setup">
+        <input id="p1-input" placeholder="自分のポケモン (例: pikachu)">
+        <input id="p2-input" placeholder="相手のポケモン (例: bulbasaur)">
+        <button id="start-btn">バトル開始！</button>
+    </div>
 
-    <script src="script.js"></script>
+    <div id="battle-arena" class="hidden">
+        <div class="battle-scene">
+            <!-- Opponent -->
+            <div id="opponent-ui">
+                <strong id="p2-name">あいて</strong>
+                <div id="p2-types" class="type-list"></div>
+                <div class="hp-container">
+                    <div class="hp-bar"><div id="p2-hp-fill" class="hp-fill"></div></div>
+                </div>
+                <div>HP: <span id="p2-hp-text">0/0</span></div>
+            </div>
+            <img id="p2-img" src="" alt="相手ポケモン">
+            <div id="p2-blast-effect" class="blast-effect"></div>
+
+            <!-- Player -->
+            <img id="p1-img" src="" alt="自分のポケモン">
+            <div id="p1-blast-effect" class="blast-effect"></div>
+            <div id="player-ui">
+                <strong id="p1-name">じぶん</strong>
+                <div id="p1-types" class="type-list"></div>
+                <div class="hp-container">
+                    <div class="hp-bar"><div id="p1-hp-fill" class="hp-fill"></div></div>
+                </div>
+                <div>HP: <span id="p1-hp-text">0/0</span></div>
+            </div>
+        </div>
+        
+        <div id="log">どうする？</div>
+        
+        <div class="controls" id="move-container">
+            <!-- Moves will be generated here -->
+            <!-- 「にげる」ボタンもここに生成されます -->
+        </div>
+
+        <div id="post-battle-controls" class="controls hidden">
+            <button id="rematch-btn">もういちど戦う</button>
+            <button id="exit-btn">やめる</button>
+        </div>
+    </div>
+
+    <script defer src="script.js"></script>
 </body>
 </html>
